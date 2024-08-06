@@ -1,0 +1,22 @@
+/* src/page/editPrice.css */
+.edit-product-form,
+.add-product-form {
+    background-color: #ffffff; /* Fondo blanco para formularios */
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+/* Estilo específico para móviles */
+@media (max-width: 600px) {
+    .edit-product-form,
+    .add-product-form {
+        background-color: #ffffff; /* Fondo blanco para dispositivos móviles */
+    }
+}
+
+.button-container {
+    text-align: center; /* Centrar el botón */
+    margin-top: 1rem;
+}
