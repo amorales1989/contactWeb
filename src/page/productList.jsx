@@ -14,7 +14,7 @@ const ProductList = ({ formattedProducts }) => {
                 />
             ))}
         </div>
-    );
+    ); 
 };
 
 export default ProductList;
