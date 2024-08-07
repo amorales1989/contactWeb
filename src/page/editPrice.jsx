@@ -12,6 +12,7 @@ const ProductListPage = () => {
         modelo: '',
         precio: '',
         descripcion: '',
+        image: null,
     });
     const [editProduct, setEditProduct] = useState(null);
     const [businessDescription, setBusinessDescription] = useState('');
@@ -52,6 +53,22 @@ const ProductListPage = () => {
         }
     };
 
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (editProduct) {
+            setEditProduct((prev) => ({
+                ...prev,
+                image: file, // Cambia `newImage` para la edición
+            }));
+        } else {
+            setNewProduct((prev) => ({
+                ...prev,
+                image: file,
+            }));
+        }
+    };
+    
+
     const fetchBusinessDescription = async () => {
         try {
             const { data, error } = await supabase
@@ -87,8 +104,29 @@ const ProductListPage = () => {
             console.error('All fields are required');
             return;
         }
+
         try {
-            const { error } = await supabase.from('products').insert([newProduct]);
+            let imageUrl = '';
+
+            if (newProduct.image) {
+                const fileName = encodeURIComponent(newProduct.image.name);
+                console.log(fileName)
+                const { data, error: uploadError } = await supabase
+                    .storage
+                    .from('product-image')
+                    .upload(`public/${fileName}`, newProduct.image);
+
+                if (uploadError) throw uploadError;
+
+                imageUrl = `https://buzeesifyccipkpjgqwc.supabase.co/storage/v1/object/public/product-image/public/${fileName}`;
+            }
+            const { error } = await supabase
+            .from('products')
+            .insert([{
+                ...newProduct,
+                image: imageUrl,
+            }]);
+            console.log(imageUrl)
             if (error) throw error;
             fetchProducts();
             setNewProduct({
@@ -96,23 +134,44 @@ const ProductListPage = () => {
                 modelo: '',
                 precio: '',
                 descripcion: '',
+                image: null,
             });
         } catch (error) {
             console.error('Error adding product:', error);
         }
     };
 
+
+
     const handleEditProduct = async (e) => {
         e.preventDefault();
+    
         if (!editProduct.linea || !editProduct.modelo || !editProduct.precio) {
             console.error('All fields are required');
             return;
         }
+    
         try {
+            let imageUrl = editProduct.image; // Keep the existing image URL by default
+    
+            if (editProduct.image) {
+                // Upload new image if provided
+                const fileName = encodeURIComponent(editProduct.image.name);
+                const { data, error: uploadError } = await supabase
+                    .storage
+                    .from('product-image')
+                    .upload(`public/${fileName}`, editProduct.image);
+    
+                if (uploadError) throw uploadError;
+    
+                imageUrl = `https://buzeesifyccipkpjgqwc.supabase.co/storage/v1/object/public/product-image/public/${fileName}`;
+            }
+    
             const { error } = await supabase
                 .from('products')
-                .update(editProduct)
+                .update({ ...editProduct, image: imageUrl })
                 .eq('id', editProduct.id);
+    
             if (error) throw error;
             fetchProducts();
             setEditProduct(null);
@@ -120,6 +179,7 @@ const ProductListPage = () => {
             console.error('Error updating product:', error);
         }
     };
+    
 
     const handleEditClick = (product) => {
         setEditProduct(product);
@@ -169,7 +229,6 @@ const ProductListPage = () => {
 
         // Aquí puedes actualizar el orden en tu base de datos si es necesario
     };
-
     if (loading) return (
         <Container style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
             <CircularProgress />
@@ -249,6 +308,13 @@ const ProductListPage = () => {
                     fullWidth
                     margin="normal"
                 />
+                <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    style={{ marginTop: '1rem' }}
+                />
+
                 <div className="button-container">
                     <Button type="submit" variant="contained" color="primary">
                         Agregar Producto
@@ -294,6 +360,12 @@ const ProductListPage = () => {
                         fullWidth
                         margin="normal"
                     />
+                    <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    style={{ marginTop: '1rem' }}
+                />
                     <div className="button-container">
                         <Button type="submit" variant="contained" color="primary">
                             Guardar Cambios
@@ -344,6 +416,7 @@ const ProductListPage = () => {
                                                         <Typography variant="body1"><strong>Medidas:</strong> {product.modelo}</Typography>
                                                         <Typography variant="body1"><strong>Precio:</strong> ${product.precio}</Typography>
                                                         <Typography variant="body1"><strong>Descripción:</strong> {product.descripcion}</Typography>
+                                                        {product.image && <img src={product.image} alt={product.linea} style={{ maxWidth: '100px', marginTop: '1rem' }} />}
                                                         <Button
                                                             onClick={() => handleEditClick(product)}
                                                             variant="contained"
@@ -359,6 +432,7 @@ const ProductListPage = () => {
                                                         >
                                                             Eliminar
                                                         </Button>
+
                                                     </div>
                                                 </ListItem>
                                             )}

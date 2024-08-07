@@ -1,10 +1,26 @@
-/* productCard.css */
+/* ProductCard.css */
 .product-card {
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 16px;
     margin: 16px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.product-card-light {
+    background-color: #fff;
+    color: #000;
+}
+
+.product-card-dark {
     background-color: #333;
+    color: #fff;
+}
+
+.product-card img {
+    max-width: auto;
+    height: 200px;
+    border-radius: 8px;
 }
 
 .product-card h2 {
@@ -23,4 +39,10 @@
 
 .price-list li {
     margin-bottom: 4px;
+}
+
+.product {
+    max-width: auto;
+    height: 200px;
+    border-radius: 8px;
 }

@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import ContactPage from './page/home';
 import ProductListPage from './page/editPrice';
