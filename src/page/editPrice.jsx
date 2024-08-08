@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Button, TextField, Typography, List, ListItem, CircularProgress, Container, TextareaAutosize } from '@mui/material';
+import { Button, TextField, Typography, List, ListItem, CircularProgress, Container, TextareaAutosize, Dialog, DialogTitle, DialogContent, DialogActions, FormControl, FormControlLabel, Radio, RadioGroup, FormLabel } from '@mui/material';
 import { supabase } from '../api';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import './editPrice.css'; // Asegúrate de importar el archivo CSS
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const ProductListPage = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingUser, setLoadingUser] = useState(true);
+    const navigate = useNavigate();
     const [newProduct, setNewProduct] = useState({
         linea: '',
         modelo: '',
@@ -16,20 +19,67 @@ const ProductListPage = () => {
     });
     const [editProduct, setEditProduct] = useState(null);
     const [businessDescription, setBusinessDescription] = useState('');
+    const [minimumLoadingTimeElapsed, setMinimumLoadingTimeElapsed] = useState(false);
+    const [openProfileModal, setOpenProfileModal] = useState(false);
     const [showDescriptionEditor, setShowDescriptionEditor] = useState(false);
+    const [currentUser, setCurrentUser] = useState(null); // Add state for the current user
+    const [showProfileForm, setShowProfileForm] = useState(false); // Estado para controlar la visibilidad del formulario
+    const [editUserData, setEditUserData] = useState(currentUser);
+
+    const location = useLocation();
 
     useEffect(() => {
-        fetchProducts();
-        fetchBusinessDescription(); // Añadido para obtener la descripción del negocio
-    }, []);
+        fetchCurrentUser();
+    }, [location.search]); // Depend on location.search to refetch if query params change
+
+    useEffect(() => {
+        if (currentUser) {
+            fetchProducts();
+            fetchBusinessDescription();
+        }
+        // Set a timeout to change the minimumLoadingTimeElapsed state after 3 seconds
+        const timer = setTimeout(() => {
+            setMinimumLoadingTimeElapsed(true);
+        }, 3000);
+
+        return () => clearTimeout(timer); // Cleanup the timer if the component unmounts
+    }, [currentUser]); // Depend on currentUser to fetch products and description
+
+    const fetchCurrentUser = async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            setCurrentUser(user);
+
+            // Extract userId from URL query parameters
+            const queryParams = new URLSearchParams(location.search);
+            const userId = queryParams.get('id');
+
+            if (userId) {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+
+                if (error) throw error;
+                setCurrentUser(data);
+            }
+        } catch (error) {
+            console.error('Error fetching user information:', error);
+        } finally {
+            setLoadingUser(false); // Set loadingUser to false after fetching
+        }
+    };
 
     const fetchProducts = async () => {
         try {
             setLoading(true);
-            const { data, error } = await supabase.from('products').select('*');
+            const { data, error } = await supabase
+                .from('products')
+                .select('*')
+                .eq('socialReason', currentUser?.socialReason);
             if (error) throw error;
 
-            // Agrupar productos por la propiedad 'linea'
             const groupedProducts = data.reduce((groups, product) => {
                 const { linea } = product;
                 if (!groups[linea]) {
@@ -39,7 +89,6 @@ const ProductListPage = () => {
                 return groups;
             }, {});
 
-            // Convertir el objeto de grupos a un array de grupos para renderizar
             const groupedArray = Object.keys(groupedProducts).map(linea => ({
                 linea,
                 products: groupedProducts[linea],
@@ -67,7 +116,7 @@ const ProductListPage = () => {
             }));
         }
     };
-    
+
 
     const fetchBusinessDescription = async () => {
         try {
@@ -121,11 +170,11 @@ const ProductListPage = () => {
                 imageUrl = `https://buzeesifyccipkpjgqwc.supabase.co/storage/v1/object/public/product-image/public/${fileName}`;
             }
             const { error } = await supabase
-            .from('products')
-            .insert([{
-                ...newProduct,
-                image: imageUrl,
-            }]);
+                .from('products')
+                .insert([{
+                    ...newProduct,
+                    image: imageUrl,
+                }]);
             console.log(imageUrl)
             if (error) throw error;
             fetchProducts();
@@ -141,19 +190,19 @@ const ProductListPage = () => {
         }
     };
 
-
+console.log(currentUser)
 
     const handleEditProduct = async (e) => {
         e.preventDefault();
-    
+
         if (!editProduct.linea || !editProduct.modelo || !editProduct.precio) {
             console.error('All fields are required');
             return;
         }
-    
+
         try {
             let imageUrl = editProduct.image; // Keep the existing image URL by default
-    
+
             if (editProduct.image) {
                 // Upload new image if provided
                 const fileName = encodeURIComponent(editProduct.image.name);
@@ -161,17 +210,17 @@ const ProductListPage = () => {
                     .storage
                     .from('product-image')
                     .upload(`public/${fileName}`, editProduct.image);
-    
+
                 if (uploadError) throw uploadError;
-    
+
                 imageUrl = `https://buzeesifyccipkpjgqwc.supabase.co/storage/v1/object/public/product-image/public/${fileName}`;
             }
-    
+
             const { error } = await supabase
                 .from('products')
                 .update({ ...editProduct, image: imageUrl })
                 .eq('id', editProduct.id);
-    
+
             if (error) throw error;
             fetchProducts();
             setEditProduct(null);
@@ -179,11 +228,7 @@ const ProductListPage = () => {
             console.error('Error updating product:', error);
         }
     };
-    
 
-    const handleEditClick = (product) => {
-        setEditProduct(product);
-    };
 
     const handleDeleteProduct = async (id) => {
         try {
@@ -215,6 +260,58 @@ const ProductListPage = () => {
         }
     };
 
+    const handleLogout = async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            console.error('Error logging out:', error);
+        } else {
+            navigate('/login'); // Redirect to login page after successful logout
+        }
+    };
+
+    const handleProfileClick = () => {
+        setShowProfileForm(true); // Mostrar el formulario al tocar el botón de perfil
+        setOpenProfileModal(true); // Asegúrate de abrir el modal
+        setEditUserData(currentUser); // Inicializar el formulario con los datos actuales
+    };
+
+    const handleUserInputChange = (e) => {
+        const { name, value } = e.target;
+        if (name === 'infoNegocio') {
+            setEditUserData((prevData) => ({
+                ...prevData,
+                [name]: name === 'infoNegocio' ? value === 'true' : value,
+            }));
+        } else if (name === 'galeria') {
+            setEditUserData((prevData) => ({
+                ...prevData,
+                [name]: name === 'galeria' ? value === 'true' : value,
+            }));
+        } else {
+            setEditUserData((prevData) => ({
+                ...prevData,
+                [name]: value
+            }));
+        }
+    };
+
+    const handleUserFormSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const { error } = await supabase
+                .from('users')
+                .update(editUserData)
+                .eq('id', currentUser.id);
+
+            if (error) throw error;
+            console.log('User data updated successfully');
+            setShowProfileForm(false); // Ocultar el formulario tras guardar
+            setCurrentUser(editUserData); // Actualizar los datos del usuario actual
+        } catch (error) {
+            console.error('Error updating user data:', error);
+        }
+    };
+
     const handleOnDragEnd = async (result) => {
         if (!result.destination) return;
 
@@ -229,14 +326,178 @@ const ProductListPage = () => {
 
         // Aquí puedes actualizar el orden en tu base de datos si es necesario
     };
-    if (loading) return (
-        <Container style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-            <CircularProgress />
-        </Container>
+    if (loading || loadingUser || !minimumLoadingTimeElapsed) return (
+        <div class="center-body">
+            <div class="loader-spanne-20">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
     );
 
     return (
         <Container>
+            {currentUser && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div>
+                        <h2>Bienvenido a {currentUser.socialReason}</h2>
+                        <h3>Usuario: {currentUser.usuario}</h3>
+                        {/* You can display other user information here */}
+                    </div>
+                    <div>
+                        <label class="popup">
+                            <input type="checkbox" />
+                            <div tabindex="0" class="burger">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="white"
+                                    height="20"
+                                    width="20"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M12 2c2.757 0 5 2.243 5 5.001 0 2.756-2.243 5-5 5s-5-2.244-5-5c0-2.758 2.243-5.001 5-5.001zm0-2c-3.866 0-7 3.134-7 7.001 0 3.865 3.134 7 7 7s7-3.135 7-7c0-3.867-3.134-7.001-7-7.001zm6.369 13.353c-.497.498-1.057.931-1.658 1.302 2.872 1.874 4.378 5.083 4.972 7.346h-19.387c.572-2.29 2.058-5.503 4.973-7.358-.603-.374-1.162-.811-1.658-1.312-4.258 3.072-5.611 8.506-5.611 10.669h24c0-2.142-1.44-7.557-5.631-10.647z"
+                                    ></path>
+                                </svg>
+                            </div>
+                            <nav class="popup-window">
+                                <ul>
+                                    <li>
+                                        <button onClick={handleProfileClick}>
+                                            <span>Perfil</span>
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button onClick={handleLogout}>
+                                            <span>Cerrar sesión</span>
+                                        </button>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </label>
+
+                    </div>
+                </div>
+            )}
+            {showProfileForm && (
+                <Dialog open={openProfileModal} onClose={() => setOpenProfileModal(false)}>
+                    <DialogTitle>Editar Perfil</DialogTitle>
+                    <DialogContent>
+                        <form onSubmit={handleUserFormSubmit}>
+                            <TextField
+                                label="Razón social"
+                                name="socialReason"
+                                value={editUserData.socialReason || ''}
+                                onChange={handleUserInputChange}
+                                fullWidth
+                                margin="normal"
+                                required
+                                disabled
+                            />
+                            <TextField
+                                label="Email"
+                                name="email"
+                                value={editUserData.email || ''}
+                                onChange={handleUserInputChange}
+                                fullWidth
+                                margin="normal"
+                                required
+                            />
+                            <TextField
+                                label="Usuario"
+                                name="usuario"
+                                value={editUserData.usuario || ''}
+                                onChange={handleUserInputChange}
+                                fullWidth
+                                margin="normal"
+                                required
+                            />
+                            <TextField
+                                label="Contraseña"
+                                name="password"
+                                value={editUserData.password || ''}
+                                onChange={handleUserInputChange}
+                                fullWidth
+                                margin="normal"
+                                required
+                            />
+                            <TextField
+                                label="Telefono"
+                                name="phone"
+                                value={editUserData.phone || ''}
+                                onChange={handleUserInputChange}
+                                fullWidth
+                                margin="normal"
+                                required
+                            />
+                            <TextField
+                                label="Direccion"
+                                name="direccion"
+                                value={editUserData.direccion || ''}
+                                onChange={handleUserInputChange}
+                                fullWidth
+                                margin="normal"
+                                required
+                            />
+                            <FormControl component="fieldset" margin="normal">
+                                <div style={{ display: 'flex', justifyItems: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', marginRight: '70px' }}>
+                                        <FormLabel>Quienes somos</FormLabel>
+                                    </div>
+                                    <div>
+                                        <RadioGroup
+                                            name="infoNegocio"
+                                            value={editUserData.infoNegocio !== null ? (editUserData.infoNegocio ? 'true' : 'false') : ''}
+                                            onChange={handleUserInputChange}
+                                            row // This positions the radio buttons in a row
+                                        >
+                                            <FormControlLabel value="true" control={<Radio />} label="Sí" />
+                                            <FormControlLabel value="false" control={<Radio />} label="No" />
+                                        </RadioGroup>
+                                    </div>
+                                </div>
+                            </FormControl>
+                            <FormControl component="fieldset" margin="normal">
+                                <div style={{ display: 'flex', justifyItems: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', marginRight: '130px' }}>
+                                        <FormLabel>Galeria</FormLabel>
+                                    </div>
+                                    <div>
+                                        <RadioGroup
+                                            name="galeria"
+                                            value={editUserData.galeria !== null ? (editUserData.galeria ? 'true' : 'false') : ''}
+                                            onChange={handleUserInputChange}
+                                            row // This positions the radio buttons in a row
+                                        >
+                                            <FormControlLabel value="true" control={<Radio />} label="Sí" />
+                                            <FormControlLabel value="false" control={<Radio />} label="No" />
+                                        </RadioGroup>
+                                    </div>
+                                </div>
+                            </FormControl>
+
+                        </form>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button type="submit" variant="contained" color="primary" onClick={handleUserFormSubmit}>
+                            Guardar Cambios
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={() => setOpenProfileModal(false)}
+                            variant="outlined"
+                            color="secondary"
+                        >
+                            Cancelar
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            )}
             <Typography variant="h4" gutterBottom>
                 Lista de Productos
             </Typography>
@@ -361,11 +622,11 @@ const ProductListPage = () => {
                         margin="normal"
                     />
                     <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    style={{ marginTop: '1rem' }}
-                />
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        style={{ marginTop: '1rem' }}
+                    />
                     <div className="button-container">
                         <Button type="submit" variant="contained" color="primary">
                             Guardar Cambios

@@ -113,20 +113,20 @@ console.log(formattedProducts)
         setShowOffer(false);
     };
 
-    useEffect(() => {
+    /* useEffect(() => {
         setShowOffer(true);
-    }, []);
+    }, []); */
 
     return (
         <div className={`contact-page ${darkMode ? 'dark' : ''}`}>
-            {showOffer && (
+            {/* {showOffer && (
                 <div className="offer-alert">
                     <div className="offer-content">
                         <img src={promo6} alt="Colchón ConfortPlus" className="product-image" />
                         <button onClick={handleCloseOffer} className="close-button">Cerrar</button>
                     </div>
                 </div>
-            )}
+            )} */}
             <nav className="navbar">
                 <div className="nav-links">
                     <a href="#about">Quiénes Somos</a>

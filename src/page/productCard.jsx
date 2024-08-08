@@ -14,7 +14,7 @@ const ProductCard = ({ title, description, models, imageUrl }) => {
             <ul className="price-list">
                 {models.map((model, index) => (
                     <li key={index}>
-                        {model.size} - {formatPrice(model.price)}
+                        {model.size}.....${formatPrice(model.price)}
                     </li>
                 ))}
             </ul>
