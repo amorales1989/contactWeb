@@ -284,3 +284,23 @@
     }
   }
   
+  .remove-button {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(26, 7, 1, 0.212);
+    height: 30px;
+    width: 30px;
+    border-radius: 50%;
+    right: -30px;
+    top: 10px;
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.remove-button:hover {
+    background-color: rgba(233, 40, 6, 0.664);
+}

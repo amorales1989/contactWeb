@@ -125,7 +125,7 @@ const ProductListPage = () => {
                 image: file,
             }));
         }
-       
+
     };
     console.log(newImage)
 
@@ -247,7 +247,7 @@ const ProductListPage = () => {
             fetchProducts();
             setEditProduct(null);
             setShowAddProductForm(false)
-            setNewImage(''); 
+            setNewImage('');
         } catch (error) {
             console.error('Error updating product:', error);
         }
@@ -355,6 +355,10 @@ const ProductListPage = () => {
 
     const handleRemoveImage = () => {
         setNewImage(null);
+        if (editProduct) {
+            // Actualizar el estado del producto para reflejar que no tiene imagen
+            setEditProduct({ ...editProduct, image: null });
+        }
         // Opcionalmente, aquí puedes también limpiar el archivo seleccionado en el input
         document.querySelector('input[type="file"]').value = '';
     };
@@ -578,7 +582,7 @@ const ProductListPage = () => {
             </Button>
 
             {showAddProductForm && (
-                <form onSubmit={editProduct ? handleEditProduct : handleAddProduct}>
+                <form onSubmit={editProduct ? handleEditProduct : handleAddProduct} style={{ background: 'white', borderRadius: '7px', marginTop: '15px', padding: '15px' }}>
                     <TextField
                         name="linea"
                         label="Línea"
@@ -609,48 +613,46 @@ const ProductListPage = () => {
                         placeholder="Descripción"
                         value={editProduct ? editProduct.descripcion : newProduct.descripcion}
                         onChange={handleInputChange}
-                        style={{ width: '100%', margin: '10px 0', padding: '10px', borderRadius: '5px', fontFamily: 'serif', fontSize: 'medium' }}
-                    />
-                    <div style={{display: 'inline-grid', justifyContent:'center', justifyItems:'center'}}>
-                    {newImage || editProduct?.image ? (
-                <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <img
-                        src={newImage || editProduct?.image}
-                        style={{ maxWidth: '100px', marginTop: '1rem' }}
-                        alt="Product Preview"
-                    />
-                    <button
-                        type="button"
-                        onClick={handleRemoveImage}
                         style={{
-                            position: 'absolute',
-                            top: '0',
-                            right: '0',
-                            background: 'red',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '50%',
-                            width: '20px',
-                            height: '20px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
+                            width: '93%',
+                            background: 'white',
+                            borderColor: '#cacaca',
+                            margin: '10px 0',
+                            padding: '10px',
+                            borderRadius: '5px',
+                            fontFamily: 'serif',
+                            fontSize: 'medium',
+                            color: 'black', // Color del texto
                         }}
-                    >
-                        X
-                    </button>
-                </div>
-            ) : (
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                />
-            )}
-                    <Button type="submit" variant="contained" color="primary">
-                        {editProduct ? 'Actualizar Producto' : 'Añadir Producto'}
-                    </Button>
+                    />
+
+                    <div style={{ display: 'inline-grid', justifyContent: 'center', justifyItems: 'center' }}>
+                        {newImage || editProduct?.image ? (
+                            <div style={{ position: 'relative', display: 'inline-block' }}>
+                                <img
+                                    src={newImage || editProduct?.image}
+                                    style={{ maxWidth: '100px', marginTop: '1rem' }}
+                                    alt="Product Preview"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleRemoveImage}
+                                    className="remove-button"
+                                >
+                                    X
+                                </button>
+                            </div>
+                        ) : (
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                style={{ marginBottom: '15px' }}
+                            />
+                        )}
+                        <Button type="submit" variant="contained" color="primary">
+                            {editProduct ? 'Actualizar Producto' : 'Añadir Producto'}
+                        </Button>
 
                     </div>
                 </form>
