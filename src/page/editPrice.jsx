@@ -17,6 +17,7 @@ const ProductListPage = () => {
         descripcion: '',
         image: null,
     });
+    const [showAddProductForm, setShowAddProductForm] = useState(false);
     const [editProduct, setEditProduct] = useState(null);
     const [businessDescription, setBusinessDescription] = useState('');
     const [minimumLoadingTimeElapsed, setMinimumLoadingTimeElapsed] = useState(false);
@@ -25,6 +26,7 @@ const ProductListPage = () => {
     const [currentUser, setCurrentUser] = useState(null); // Add state for the current user
     const [showProfileForm, setShowProfileForm] = useState(false); // Estado para controlar la visibilidad del formulario
     const [editUserData, setEditUserData] = useState(currentUser);
+    const [newImage, setNewImage] = useState(null);
 
     const location = useLocation();
 
@@ -104,6 +106,14 @@ const ProductListPage = () => {
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
+        console.log(file)
+        if (file) {
+            // Crear una URL de objeto para mostrar la nueva imagen
+            const imageUrl = URL.createObjectURL(file);
+            setNewImage(imageUrl);
+            // Aquí puedes manejar la carga del archivo, si es necesario
+            // Por ejemplo: subirlo a un servidor o a un bucket
+        }
         if (editProduct) {
             setEditProduct((prev) => ({
                 ...prev,
@@ -115,8 +125,9 @@ const ProductListPage = () => {
                 image: file,
             }));
         }
+       
     };
-
+    console.log(newImage)
 
     const fetchBusinessDescription = async () => {
         try {
@@ -174,6 +185,7 @@ const ProductListPage = () => {
                 .insert([{
                     ...newProduct,
                     image: imageUrl,
+                    socialReason: currentUser.socialReason
                 }]);
             console.log(imageUrl)
             if (error) throw error;
@@ -190,7 +202,7 @@ const ProductListPage = () => {
         }
     };
 
-console.log(currentUser)
+    console.log(currentUser)
 
     const handleEditProduct = async (e) => {
         e.preventDefault();
@@ -201,19 +213,29 @@ console.log(currentUser)
         }
 
         try {
-            let imageUrl = editProduct.image; // Keep the existing image URL by default
-
-            if (editProduct.image) {
+            let imageUrl = editProduct.image;
+            if (imageUrl instanceof File) {
                 // Upload new image if provided
                 const fileName = encodeURIComponent(editProduct.image.name);
-                const { data, error: uploadError } = await supabase
+                const { data: listData, error: listError } = await supabase
                     .storage
                     .from('product-image')
-                    .upload(`public/${fileName}`, editProduct.image);
+                    .list('public/', { search: fileName });
 
-                if (uploadError) throw uploadError;
+                if (listError) throw listError;
+                if (listData.length === 0) {
+                    const { data, error: uploadError } = await supabase
+                        .storage
+                        .from('product-image')
+                        .upload(`public/${fileName}`, editProduct.image);
 
-                imageUrl = `https://buzeesifyccipkpjgqwc.supabase.co/storage/v1/object/public/product-image/public/${fileName}`;
+                    if (uploadError) throw uploadError;
+
+                    imageUrl = `https://buzeesifyccipkpjgqwc.supabase.co/storage/v1/object/public/product-image/public/${fileName}`;
+                } else {
+                    // Si el archivo ya existe, puedes manejarlo según lo necesites
+                    imageUrl = `https://buzeesifyccipkpjgqwc.supabase.co/storage/v1/object/public/product-image/public/${fileName}`;
+                }
             }
 
             const { error } = await supabase
@@ -224,11 +246,12 @@ console.log(currentUser)
             if (error) throw error;
             fetchProducts();
             setEditProduct(null);
+            setShowAddProductForm(false)
+            setNewImage(''); 
         } catch (error) {
             console.error('Error updating product:', error);
         }
     };
-
 
     const handleDeleteProduct = async (id) => {
         try {
@@ -312,6 +335,9 @@ console.log(currentUser)
         }
     };
 
+    const handleEditClick = (product) => {
+        setEditProduct(product);
+    };
     const handleOnDragEnd = async (result) => {
         if (!result.destination) return;
 
@@ -326,6 +352,20 @@ console.log(currentUser)
 
         // Aquí puedes actualizar el orden en tu base de datos si es necesario
     };
+
+    const handleRemoveImage = () => {
+        setNewImage(null);
+        // Opcionalmente, aquí puedes también limpiar el archivo seleccionado en el input
+        document.querySelector('input[type="file"]').value = '';
+    };
+    const toggleAddProductForm = () => {
+        setShowAddProductForm(!showAddProductForm);
+    };
+
+    const toggleEditProductForm = (e) => {
+        setShowAddProductForm(e);
+    };
+
     if (loading || loadingUser || !minimumLoadingTimeElapsed) return (
         <div class="center-body">
             <div class="loader-spanne-20">
@@ -374,7 +414,7 @@ console.log(currentUser)
                                     </li>
                                     <li>
                                         <button onClick={handleLogout}>
-                                            <span>Cerrar sesión</span>
+                                            <span>Salir</span>
                                         </button>
                                     </li>
                                 </ul>
@@ -533,58 +573,91 @@ console.log(currentUser)
             )}
 
             {/* Formulario para añadir producto */}
-            <form onSubmit={handleAddProduct} className="add-product-form">
-                <TextField
-                    label="Línea"
-                    name="linea"
-                    value={newProduct.linea}
-                    onChange={handleInputChange}
-                    fullWidth
-                    margin="normal"
-                    required
-                />
-                <TextField
-                    label="Medidas"
-                    name="modelo"
-                    value={newProduct.modelo}
-                    onChange={handleInputChange}
-                    fullWidth
-                    margin="normal"
-                    required
-                />
-                <TextField
-                    label="Precio"
-                    name="precio"
-                    value={newProduct.precio}
-                    onChange={handleInputChange}
-                    fullWidth
-                    margin="normal"
-                    required
-                />
-                <TextField
-                    label="Descripción"
-                    name="descripcion"
-                    value={newProduct.descripcion}
-                    onChange={handleInputChange}
-                    fullWidth
-                    margin="normal"
-                />
+            <Button variant="contained" color="primary" onClick={toggleAddProductForm}>
+                {showAddProductForm ? 'Cancelar' : 'Añadir Producto'}
+            </Button>
+
+            {showAddProductForm && (
+                <form onSubmit={editProduct ? handleEditProduct : handleAddProduct}>
+                    <TextField
+                        name="linea"
+                        label="Línea"
+                        value={editProduct ? editProduct.linea : newProduct.linea}
+                        onChange={handleInputChange}
+                        fullWidth
+                        margin="normal"
+                    />
+                    <TextField
+                        name="modelo"
+                        label="Modelo"
+                        value={editProduct ? editProduct.modelo : newProduct.modelo}
+                        onChange={handleInputChange}
+                        fullWidth
+                        margin="normal"
+                    />
+                    <TextField
+                        name="precio"
+                        label="Precio"
+                        type="number"
+                        value={editProduct ? editProduct.precio : newProduct.precio}
+                        onChange={handleInputChange}
+                        fullWidth
+                        margin="normal"
+                    />
+                    <TextareaAutosize
+                        name="descripcion"
+                        placeholder="Descripción"
+                        value={editProduct ? editProduct.descripcion : newProduct.descripcion}
+                        onChange={handleInputChange}
+                        style={{ width: '100%', margin: '10px 0', padding: '10px', borderRadius: '5px', fontFamily: 'serif', fontSize: 'medium' }}
+                    />
+                    <div style={{display: 'inline-grid', justifyContent:'center', justifyItems:'center'}}>
+                    {newImage || editProduct?.image ? (
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <img
+                        src={newImage || editProduct?.image}
+                        style={{ maxWidth: '100px', marginTop: '1rem' }}
+                        alt="Product Preview"
+                    />
+                    <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        style={{
+                            position: 'absolute',
+                            top: '0',
+                            right: '0',
+                            background: 'red',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '20px',
+                            height: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        X
+                    </button>
+                </div>
+            ) : (
                 <input
                     type="file"
                     accept="image/*"
                     onChange={handleFileChange}
-                    style={{ marginTop: '1rem' }}
                 />
-
-                <div className="button-container">
+            )}
                     <Button type="submit" variant="contained" color="primary">
-                        Agregar Producto
+                        {editProduct ? 'Actualizar Producto' : 'Añadir Producto'}
                     </Button>
-                </div>
-            </form>
+
+                    </div>
+                </form>
+            )}
 
             {/* Formulario para editar producto */}
-            {editProduct && (
+            {/* {editProduct && (
                 <form onSubmit={handleEditProduct} className="edit-product-form">
                     <TextField
                         label="Línea"
@@ -642,7 +715,7 @@ console.log(currentUser)
                         </Button>
                     </div>
                 </form>
-            )}
+            )} */}
 
             {/* Drag and Drop Context */}
             <DragDropContext onDragEnd={handleOnDragEnd}>
@@ -679,7 +752,11 @@ console.log(currentUser)
                                                         <Typography variant="body1"><strong>Descripción:</strong> {product.descripcion}</Typography>
                                                         {product.image && <img src={product.image} alt={product.linea} style={{ maxWidth: '100px', marginTop: '1rem' }} />}
                                                         <Button
-                                                            onClick={() => handleEditClick(product)}
+                                                            onClick={() => {
+                                                                const e = true
+                                                                handleEditClick(product);
+                                                                toggleEditProductForm(e); // Cambia el estado para mostrar el formulario
+                                                            }}
                                                             variant="contained"
                                                             color="secondary"
                                                             style={{ marginRight: '1rem' }}

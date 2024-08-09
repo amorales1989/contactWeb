@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../api';
-import './login.css'; // Asegúrate de tener este archivo CSS
+import './login.css';
 import { useNavigate } from 'react-router-dom';
 
 const LoginForm = () => {
@@ -14,7 +14,6 @@ const LoginForm = () => {
 
     const navigate = useNavigate();
 
-    console.log(formData)
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
@@ -55,6 +54,12 @@ const LoginForm = () => {
                 console.error('Error inserting user:', insertError);
             } else {
                 alert('Registration successful');
+                setFormData({
+                    username: '',
+                    password: '',
+                    email: '',
+                    socialReason: '',
+                });
             }
         } else {
             const { data, error } = await supabase
@@ -62,13 +67,20 @@ const LoginForm = () => {
                 .select('*')
                 .eq('usuario', formData.username)
                 .eq('password', formData.password);
-            console.log(data)
+
             if (error) {
                 console.error('Error logging in:', error);
             } else if (data.length > 0) {
                 // Login successful
                 const socialReason = data[0].id;
+                alert('Login successful');
                 navigate(`/editproducts?id=${encodeURIComponent(socialReason)}`);
+                setFormData({
+                    username: '',
+                    password: '',
+                    email: '',
+                    socialReason: '',
+                });
             } else {
                 // Invalid credentials
                 alert('Invalid username or password');
@@ -77,31 +89,79 @@ const LoginForm = () => {
     };
 
     return (
-        <div class="container">
-            <input id="signup_toggle" type="checkbox" checked={isSignup} onChange={() => setIsSignup(!isSignup)} />
-            <form class="form" onSubmit={handleSubmit}>
-                <div class="form_front">
-
-                    <div class="form_details">Iniciar sesión</div>
-                    <input type="text" class="input" placeholder="Usuario" />
-                    <input type="text" class="input" placeholder="Contraseña" />
-                    <button class="btn">Entrar</button>
-                    <span class="switch">No estas registrado?
-                        <label for="signup_toggle" class="signup_tog2">
-                            Regitrarse
+        <div className="container">
+            <input
+                id="signup_toggle"
+                type="checkbox"
+                checked={isSignup}
+                onChange={() => setIsSignup(!isSignup)}
+            />
+            <form className="form" onSubmit={handleSubmit}>
+                <div className="form_front">
+                    <div className="form_details">Iniciar sesión</div>
+                    <input
+                        type="text"
+                        name="username"
+                        className="input"
+                        placeholder="Usuario"
+                        value={formData.username}
+                        onChange={handleChange}
+                    />
+                    <input
+                        type="password"
+                        name="password"
+                        className="input"
+                        placeholder="Contraseña"
+                        value={formData.password}
+                        onChange={handleChange}
+                    />
+                    <button className="btn">Entrar</button>
+                    <span className="switch">
+                        No estás registrado?
+                        <label htmlFor="signup_toggle" className="signup_tog2">
+                            Registrarse
                         </label>
                     </span>
                 </div>
-                <div class="form_back" >
-                    <div class="form_details">Registro</div>
-                    <input type="text" name="socialReason" className="input" placeholder="Razón social" onChange={handleChange} />
-                    <input type="text" name="username" className="input" placeholder="Usuario" onChange={handleChange} />
-                    <input type="password" name="password" className="input" placeholder="Contraseña" onChange={handleChange} />
-                    <input type="email" name="email" className="input" placeholder="E-mail" onChange={handleChange} />
-                    <button class="btn">Registrase</button>
-                    <span class="switch">Estas registrado?
-                        <label for="signup_toggle" class="signup_tog">
-                            iniciar sesión
+                <div className="form_back">
+                    <div className="form_details">Registro</div>
+                    <input
+                        type="text"
+                        name="socialReason"
+                        className="input"
+                        placeholder="Razón social"
+                        value={formData.socialReason}
+                        onChange={handleChange}
+                    />
+                    <input
+                        type="text"
+                        name="username"
+                        className="input"
+                        placeholder="Usuario"
+                        value={formData.username}
+                        onChange={handleChange}
+                    />
+                    <input
+                        type="password"
+                        name="password"
+                        className="input"
+                        placeholder="Contraseña"
+                        value={formData.password}
+                        onChange={handleChange}
+                    />
+                    <input
+                        type="email"
+                        name="email"
+                        className="input"
+                        placeholder="E-mail"
+                        value={formData.email}
+                        onChange={handleChange}
+                    />
+                    <button className="btn">Registrarse</button>
+                    <span className="switch">
+                        Estás registrado?
+                        <label htmlFor="signup_toggle" className="signup_tog">
+                            Iniciar sesión
                         </label>
                     </span>
                 </div>
