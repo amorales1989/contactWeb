@@ -564,12 +564,13 @@ const ProductListPage = () => {
                         placeholder="Escribe aquí la descripción de tu negocio..."
                         value={businessDescription}
                         onChange={(e) => setBusinessDescription(e.target.value)}
-                        style={{ width: '100%', marginBottom: '1rem' }}
+                        style={{ width: '100%', marginBottom: '1rem', marginTop:'4px' }}
                     />
                     <Button
                         onClick={handleDescriptionSave}
                         variant="contained"
                         color="secondary"
+                        style={{marginBottom:'15px'}}
                     >
                         Guardar Descripción
                     </Button>
@@ -745,33 +746,51 @@ const ProductListPage = () => {
                                                     ref={provided.innerRef}
                                                     {...provided.draggableProps}
                                                     {...provided.dragHandleProps}
-                                                    style={{ ...provided.draggableProps.style, borderBottom: '1px solid #ddd', padding: '1rem 0' }}
+                                                    style={{ ...provided.draggableProps.style, borderBottom: '2px solid #4a3c3c', padding: '1rem 0' }}
                                                 >
-                                                    <div>
-                                                        <Typography variant="h6">{product.linea}</Typography>
-                                                        <Typography variant="body1"><strong>Medidas:</strong> {product.modelo}</Typography>
-                                                        <Typography variant="body1"><strong>Precio:</strong> ${product.precio}</Typography>
-                                                        <Typography variant="body1"><strong>Descripción:</strong> {product.descripcion}</Typography>
-                                                        {product.image && <img src={product.image} alt={product.linea} style={{ maxWidth: '100px', marginTop: '1rem' }} />}
-                                                        <Button
-                                                            onClick={() => {
-                                                                const e = true
-                                                                handleEditClick(product);
-                                                                toggleEditProductForm(e); // Cambia el estado para mostrar el formulario
-                                                            }}
-                                                            variant="contained"
-                                                            color="secondary"
-                                                            style={{ marginRight: '1rem' }}
-                                                        >
-                                                            Editar
-                                                        </Button>
-                                                        <Button
-                                                            onClick={() => handleDeleteProduct(product.id)}
-                                                            variant="contained"
-                                                            color="error"
-                                                        >
-                                                            Eliminar
-                                                        </Button>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'stretch', width: '100%', marginBottom: '17px' }}>
+                                                                <div style={{ flex: 1 }}>
+                                                                    <Typography variant="h6">{product.linea}</Typography>
+                                                                    <Typography variant="body1"><strong>Medidas:</strong> {product.modelo}</Typography>
+                                                                    <Typography variant="body1"><strong>Precio:</strong> ${product.precio}</Typography>
+                                                                </div>
+                                                                {product.image && (
+                                                                    <div style={{ flexShrink: 0 }}>
+                                                                        <img src={product.image} alt={product.linea} style={{ maxWidth: '100px', marginLeft: 'auto', marginTop: '1rem' }} />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            {product.descripcion && (
+                                                                <div>
+                                                                    <Typography variant="body1"><strong>Descripción:</strong> {product.descripcion}</Typography>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        <div>
+                                                            <Button
+                                                                onClick={() => {
+                                                                    const e = true
+                                                                    handleEditClick(product);
+                                                                    toggleEditProductForm(e);
+                                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                                }}
+                                                                variant="contained"
+                                                                color="secondary"
+                                                                style={{ marginRight: '1rem' }}
+                                                            >
+                                                                Editar
+                                                            </Button>
+                                                            <Button
+                                                                onClick={() => handleDeleteProduct(product.id)}
+                                                                variant="contained"
+                                                                color="error"
+                                                            >
+                                                                Eliminar
+                                                            </Button>
+                                                        </div>
 
                                                     </div>
                                                 </ListItem>

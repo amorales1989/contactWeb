@@ -109,9 +109,9 @@ console.log(formattedProducts)
         window.location.href = 'https://wa.me/5491133414526';
     };
 
-    const handleCloseOffer = () => {
+    /* const handleCloseOffer = () => {
         setShowOffer(false);
-    };
+    }; */
 
     /* useEffect(() => {
         setShowOffer(true);
