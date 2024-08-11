@@ -106,8 +106,13 @@ console.log(formattedProducts)
     ];
 
     const handleWhatsAppClick = () => {
-        window.location.href = 'https://wa.me/5491133414526';
+        const phoneNumber = '5491133414526'; 
+        const message = 'Hola, me interesa un producto que vi en tu web.'; 
+        const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+        
+        window.location.href = url;
     };
+    
 
     /* const handleCloseOffer = () => {
         setShowOffer(false);
