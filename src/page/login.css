@@ -2,6 +2,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    background: grey;
     height: 100vh; /* Full viewport height */
     width: 100vw;  /* Full viewport width */
     position: relative;
@@ -20,6 +21,7 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    background: linear-gradient(45deg, black, transparent);
     gap: 20px;
     position: absolute;
     backface-visibility: hidden;
